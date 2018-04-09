@@ -11,12 +11,16 @@ import logging.config
 from random import randrange
 from getpass import getpass
 from os.path import abspath, dirname, join, isfile, isdir
+import datetime
 
+import json
 import requests
 import lxml.html
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from xvfbwrapper import Xvfb
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.proxy import *
 
 
 # -----------------------------------------------------------------------------
@@ -62,10 +66,13 @@ class DownloadError(Exception):
 class Client:
 
     COOKIE_FILE = "state/cookies.pkl"
-    ROOT_URL = "http://tadpoles.com/"
+    TIMESTAMP_FILE = "state/timestamp"
+    ROOT_URL = "https://www.tadpoles.com/"
     HOME_URL = "https://www.tadpoles.com/parents"
+    LIST_BASE_URL = ROOT_URL+"remote/v1/events?direction=range"
     MIN_SLEEP = 1
     MAX_SLEEP = 3
+    DAY_RANGE = datetime.timedelta(days=45)
 
     def __init__(self):
         self.init_logging()
@@ -79,19 +86,19 @@ class Client:
         self.exception = logger.exception
 
     def __enter__(self):
-        self.info("Starting xvfb display")
-        self.vdisplay = Xvfb()
-        self.vdisplay.start()
+        options = Options()
+        options.add_argument("--headless")
+
+        fp = webdriver.FirefoxProfile()
+
         self.info("Starting browser")
-        self.br = self.browser = webdriver.Firefox()
+        self.br = self.browser = webdriver.Firefox(firefox_options=options,firefox_profile=fp)
         self.br.implicitly_wait(10)
         return self
 
     def __exit__(self, *args):
         self.info("Shutting down browser")
         self.browser.quit()
-        self.info("Shutting down xfvb display")
-        self.vdisplay.stop()
 
     def sleep(self, minsleep=None, maxsleep=None):
         _min = minsleep or self.MIN_SLEEP
@@ -133,147 +140,163 @@ class Client:
         '''Switch to the other window.'''
         self.info("Switching windows.")
         all_windows = set(self.br.window_handles)
-        current_window = set([self.br.current_window_handle])
-        other_window = (all_windows - current_window).pop()
-        br.switch_to.window(other_window)
+        self.info(all_windows)
+        try:
+            current_window = set([self.br.current_window_handle])
+            self.info(current_window)
+            other_window = (all_windows - current_window).pop()
+            self.br.switch_to.window(other_window)
+        except:
+            current_window = self.br.window_handles[0]
+            self.br.switch_to.window(current_window)
+            
+        self.info(current_window)
+
+    def dump_timestamp(self, timestamp):
+        self.info("Dumping Timestamp.")
+        with open(self.TIMESTAMP_FILE,"wb") as f:
+            pickle.dump(timestamp, f)
+
+    def load_timestamp(self):
+        self.info("Loading Timestamp.")
+        self.full_sync = False
+
+        if not isdir('state'):
+            os.mkdir('state')
+
+        if isfile(self.TIMESTAMP_FILE):
+            with open(self.TIMESTAMP_FILE, "rb") as f:
+                start_time = pickle.load(f)
+        else:
+            start_time = datetime.datetime.now()
+            self.full_sync = True
+        return start_time
+
+    def get_api(self):
+        end_time = datetime.datetime.now()
+        start_time = self.load_timestamp()
+        self.dump_timestamp(end_time)
+
+        while True:
+            if self.full_sync:
+                start_time=end_time-self.DAY_RANGE
+
+            start_time_val=int(time.mktime(start_time.timetuple()))
+
+            start_string="&earliest_event_time="+str(start_time_val)
+            end_string="&latest_event_time="+str(int(time.mktime(end_time.timetuple())))
+
+            num_events="&num_events=300&client=dashboard"
+
+            url = self.LIST_BASE_URL+start_string+end_string+num_events
+            self.info(url)
+            try:
+                resp = requests.get(url,cookies=self.req_cookies)
+                if resp.status_code != 200:
+                    self.debug("Failed to get list due to " + resp.status_code)
+                    break
+
+                jsonData = json.loads(resp.text)
+
+                if len(jsonData['events']) == 0:
+                    break
+                for event in jsonData['events']:
+                    if len(event['attachments']) > 0:
+                        for attachment in event['new_attachments']:
+                            self.save_image_api(attachment['key'],event['event_time'])
+                
+                if not self.full_sync:
+                    break
+                end_time=start_time
+            except e:
+               self.debug(e)
+               self.dump_timestamp(start_time)
+               break
+                 
 
     def do_login(self):
         # Navigate to login page.
         self.info("Navigating to login page.")
         self.br.find_element_by_id("login-button").click()
-        self.br.find_element_by_class_name("tp-block-half").click()
-        self.br.find_element_by_class_name("other-login-button").click()
+        self.br.find_element_by_xpath("//div[@data-bind = 'click: chooseParent']").click()
+        self.br.find_element_by_xpath("//img[@data-bind = 'click:loginGoogle']").click()
 
         # Focus on the google auth popup.
         self.switch_windows()
 
         # Enter email.
-        email = self.br.find_element_by_id("Email")
+        email = self.br.find_element_by_id("identifierId")
+        #email.click()
         email.send_keys(input("Enter email: "))
-        email.submit()
+        #email.submit()
+        self.br.find_element_by_id("identifierNext").click()
+        self.sleep()
 
         # Enter password.
-        passwd = self.br.find_element_by_id("Passwd")
+        #self.info(self.br.current_url)
+        #self.br.find_element_by_css_selector("input[type='password'][name='password']").send_keys(getpass("Enter password:")).submit();
+
+        passwd = self.br.find_element_by_css_selector("input[type='password'][name='password']")
         passwd.send_keys(getpass("Enter password:"))
-        passwd.submit()
+        #passwd.submit()
+        self.br.find_element_by_id("passwordNext").click()
 
         # Enter 2FA pin.
-        pin = self.br.find_element_by_id("idvPreregisteredPhonePin")
-        pin.send_keys(getpass("Enter google verification code: "))
-        pin.submit()
+        #Epin = self.br.find_element_by_id("idvPreregisteredPhonePin")
+        #pin.send_keys(getpass("Enter google verification code: "))
+        #pin.submit()
 
         # Click "approve".
         self.info("Sleeping 2 seconds.")
-        self.sleep(minsleep=2)
+        self.sleep(minsleep=10,maxsleep=15)
         self.info("Clicking 'approve' button.")
-        self.br.find_element_by_id("submit_approve_access").click()
-
+        #self.br.find_element_by_id("submit_approve_access").click()
+        
         # Switch back to tadpoles.
         self.switch_windows()
+        self.br.save_screenshot("state/after_login.png")
 
-    def iter_monthyear(self):
-        '''Yields pairs of xpaths for each year/month tile on the
-        right hand side of the user's home page.
-        '''
-        month_xpath_tmpl = '//*[@id="app"]/div[4]/div[1]/ul/li[%d]/div/div/div/div/span[%d]'
-        month_index = 1
-        while True:
-            month_xpath = month_xpath_tmpl % (month_index, 1)
-            year_xpath = month_xpath_tmpl % (month_index, 2)
+    def save_image_api(self, key, timestamp):
+        year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
+        month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
 
-            # Go home if not there already.
-            if self.br.current_url != self.HOME_URL:
-                self.navigate_url(self.HOME_URL)
-            try:
-                # Find the next month and year elements.
-                month = self.br.find_element_by_xpath(month_xpath)
-                year = self.br.find_element_by_xpath(year_xpath)
-            except NoSuchElementException:
-                # We reached the end of months on the profile page.
-                self.warning("No months left to scrape. Stopping.")
-                sys.exit(0)
+        url = self.ROOT_URL + "remote/v1/attachment?key="+key+"&download=true"
 
-            self.month = month
-            self.year = year
-            yield month, year
+        #Download file
+        resp = requests.get(url, cookies=self.req_cookies, stream=True)
+        if resp.status_code != 200:
+            msg = 'Error (%r) downloading %r'
+            raise DownloadError(msg % (resp.status_code, url))
 
-            month_index += 1
-
-    def iter_urls(self):
-        '''Find all the image urls on the current page.
-        '''
-        # For each month on the dashboard...
-        for month, year in self.iter_monthyear():
-            # Navigate to the next month.
-            month.click()
-            self.warning("Getting urls for month: %r" % month.text)
-            self.sleep(minsleep=5)
-            re_url = re.compile('\("([^"]+)')
-            for div in self.br.find_elements_by_xpath("//li/div"):
-                url = re_url.search(div.get_attribute("style"))
-                if not url:
-                    continue
-                url = url.group(1)
-                url = url.replace('thumbnail=true', '')
-                url = url.replace('&thumbnail=true', '')
-                url = 'https://www.tadpoles.com' + url
-                yield url
-
-    def save_image(self, url):
-        '''Save an image locally using requests.
-        '''
-
-        # Make the local filename.
-        _, key = url.split("key=")
-        filename_parts = ['img', self.year.text, self.month.text, '%s.jpg']
-        filename = abspath(join(*filename_parts) % key)
-
-        # Only download if the file doesn't already exist.
-        if isfile(filename):
-            self.debug("Already downloaded: %s" % filename)
-            return
-        else:
-            self.info("Saving: %s" % filename)
-            self.sleep()
+        filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
+        filename = abspath(join(*filename_parts))
 
         # Make sure the parent dir exists.
         dr = dirname(filename)
         if not isdir(dr):
             os.makedirs(dr)
-
-        # Download it with requests.
-        resp = requests.get(url, cookies=self.req_cookies, stream=True)
-        if resp.status_code == 200:
-            with open(filename, 'wb') as f:
-                for chunk in resp.iter_content(1024):
-                    f.write(chunk)
-        else:
-            msg = 'Error (%r) downloading %r'
-            raise DownloadError(msg % (resp.status_code, url))
+           
+        with open(filename, 'wb') as f:
+            for chunk in resp.iter_content(1024):
+                f.write(chunk)
 
     def download_images(self):
         '''Login to tadpoles.com and download all user's images.
         '''
-        self.navigate_url(self.ROOT_URL)
 
         try:
             self.load_cookies()
         except FileNotFoundError:
+            self.navigate_url(self.ROOT_URL)
             self.do_login()
             self.dump_cookies()
-        else:
-            self.add_cookies_to_browser()
-            self.navigate_url(self.HOME_URL)
+            self.load_cookies()
 
         # Get the cookies ready for requests lib.
         self.requestify_cookies()
 
-        for url in self.iter_urls():
-            try:
-                self.save_image(url)
-            except DownloadError as exc:
-                self.exception(exc)
-
+        self.get_api()
+    
     def main(self):
         with self as client:
             try:
