@@ -2,7 +2,7 @@ selenium
 pyyaml
 requests
 lxml
-flask
+Flask
 Jinja2
 Werkzeug
 gunicorn
