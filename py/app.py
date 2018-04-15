@@ -246,6 +246,7 @@ class Client:
         #pin.send_keys(getpass("Enter google verification code: "))
         #pin.submit()
 
+        self.br.save_screenshot("state/after_login.png")
         # Click "approve".
         self.info("Sleeping 2 seconds.")
         self.sleep(minsleep=10,maxsleep=15)
@@ -254,7 +255,7 @@ class Client:
         
         # Switch back to tadpoles.
         self.switch_windows()
-        self.br.save_screenshot("state/after_login.png")
+        
 
     def save_image_api(self, key, timestamp):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
