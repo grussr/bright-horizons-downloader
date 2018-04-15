@@ -241,9 +241,6 @@ class Client:
         #passwd.submit()
         self.br.find_element_by_id("passwordNext").click()
         
-        with open('state/logs',"wb") as f:
-            pickle.dump(self.br.page_source, f)
-
         # Enter 2FA pin.
         #Epin = self.br.find_element_by_id("idvPreregisteredPhonePin")
         #pin.send_keys(getpass("Enter google verification code: "))
