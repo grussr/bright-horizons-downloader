@@ -2,3 +2,7 @@ selenium
 pyyaml
 requests
 lxml
+flask
+Jinja2
+Werkzeug
+gunicorn
