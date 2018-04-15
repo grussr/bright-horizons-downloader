@@ -1,0 +1,1 @@
+web: gunicorn show_image:app
