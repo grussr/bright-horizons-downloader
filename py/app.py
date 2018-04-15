@@ -193,8 +193,8 @@ class Client:
             try:
                 resp = requests.get(url,cookies=self.req_cookies)
                 if resp.status_code != 200:
-					msg = 'Error (%r) downloading %r'
-					raise DownloadError(msg % (resp.status_code, url))
+                    msg = 'Error (%r) downloading %r'
+                    raise DownloadError(msg % (resp.status_code, url))
 
                 jsonData = json.loads(resp.text)
 
@@ -240,8 +240,8 @@ class Client:
         passwd.send_keys(getpass("Enter password:"))
         #passwd.submit()
         self.br.find_element_by_id("passwordNext").click()
-		
-		self.info(self.br.page_source)
+        
+        self.info(self.br.page_source)
 
         # Enter 2FA pin.
         #Epin = self.br.find_element_by_id("idvPreregisteredPhonePin")
