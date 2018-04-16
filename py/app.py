@@ -122,7 +122,7 @@ class Client:
     def dump_to_db(self, item_type, data):
         client = MongoClient(self.MONGO_URL)
         try:
-            db = client.get_default_database()
+            db = client.get_default_database().settings
             db.replaceOne({'type':item_type},{'type': item_type, 'value': pickle.dumps(data)},True)
         except Exception as exc:
             self.exception(exc)
@@ -130,7 +130,7 @@ class Client:
     def load_from_db(self, item_type):
         client = MongoClient(self.MONGO_URL)
         try:
-            db = client.get_default_database()
+            db = client.get_default_database().settings
             return pickle.loads(db.findOne({'type':item_type}))
         except Exception as exc:
             self.exception(exc)

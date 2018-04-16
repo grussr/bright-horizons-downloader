@@ -11,7 +11,7 @@ def source():
     MONGO_URL = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/test_db')
     client = MongoClient(MONGO_URL)
     try:
-        db = client.get_default_database()
+        db = client.get_default_database().settings
         image_file = pickle.loads(db.findOne({'type':'screenshot'}))
         send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
