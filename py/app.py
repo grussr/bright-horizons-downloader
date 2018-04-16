@@ -145,9 +145,11 @@ class Client:
             pickle.dump(self.br.get_cookies(), f)
 
     def dump_cookies_db(self):
+        self.info("Dumping cookies to db.")
         self.dump_to_db ('cookie', self.br.get_cookies())
 
     def dump_screenshot_db(self):
+        self.info("Dumping screenshot to db.")
         self.dump_to_db ('screenshot', self.br.get_screenshot_as_png())
 
     def add_cookies_to_browser(self):
