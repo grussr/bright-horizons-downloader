@@ -12,7 +12,7 @@ def source():
     client = MongoClient(MONGO_URL)
     try:
         db = client.get_default_database().settings
-        image_file = pickle.loads(db.findOne({'type':'screenshot'}))
+        image_file = pickle.loads(db.find_one({'type':'screenshot'}))
         send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
         print(str(exc))
