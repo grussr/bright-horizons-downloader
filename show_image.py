@@ -1,18 +1,22 @@
 from flask import Flask
-import base64
+from flask import send_file
+from pymongo import MongoClient
+import pickle
 
 app = Flask(__name__)
 
 @app.route('/')
 def source():
-  try:
-    with open('state/after_login.png',"rb") as i:
-      encoded_string = base64.b64encode(i.read())
-      html = '<img src="data:image/png;base64;+encoded_string">'
-  except Exception as e:
-    print(str(e))
-    html = 'Hello World!'
-  return html
+    MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017')
+    client = MongoClient(MONGO_URL)
+    try:
+        db = client.get_default_database()
+        image_file = pickle.loads(db.findOne(type:item_type))
+        send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
+    except Exception as exc:
+        print(str(e))
+        
+  return 'Hello World!'
 
 if __name__ == '__main__':
     app.run()

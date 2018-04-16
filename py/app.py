@@ -21,6 +21,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.proxy import *
+from pymongo import MongoClient
 
 
 # -----------------------------------------------------------------------------
@@ -64,7 +65,7 @@ class DownloadError(Exception):
 
 
 class Client:
-
+    MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017')
     COOKIE_FILE = "state/cookies.pkl"
     TIMESTAMP_FILE = "state/timestamp"
     ROOT_URL = "https://www.tadpoles.com/"
@@ -118,10 +119,36 @@ class Client:
         with open(self.COOKIE_FILE, "rb") as f:
             self.cookies = pickle.load(f)
 
+    def dump_to_db(self, item_type, data):
+        client = MongoClient(self.MONGO_URL)
+        try:
+            db = client.get_default_database()
+            db.insert({type:item_type, value: pickle.dumps(data)})
+        except Exception as exc:
+            self.exception(exc)
+
+    def load_from_db(self, item_type):
+        client = MongoClient(self.MONGO_URL)
+        try:
+            db = client.get_default_database()
+            return pickle.loads(db.findOne('type':item_type))
+        except Exception as exc:
+            self.exception(exc)
+
+    def load_cookies_db(self):
+        self.info("Loading cookies from db.")
+        self.cookies = self.load_from_db('cookie')
+
     def dump_cookies(self):
         self.info("Dumping cookies.")
         with open(self.COOKIE_FILE,"wb") as f:
             pickle.dump(self.br.get_cookies(), f)
+
+    def dump_cookies_db(self):
+        self.dump_to_db ('screenshot', self.br.get_cookies())
+
+    def dump_screenshot_db(self):
+        self.dump_to_db ('screenshot', self.br.get_screenshot_as_png())
 
     def add_cookies_to_browser(self):
         self.info("Adding the cookies to the browser.")
@@ -208,8 +235,8 @@ class Client:
                 if not self.full_sync:
                     break
                 end_time=start_time
-            except e:
-               self.debug(e)
+            except Exception as exc:
+               self.exception(exc)
                self.dump_timestamp(start_time)
                break
                  
