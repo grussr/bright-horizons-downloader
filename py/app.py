@@ -123,7 +123,7 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database().settings
-            db.replace_one({'type':item_type},{'type': item_type, 'value': pickle.dumps(data)},True)
+            db.replace_one({'type':item_type},{'type': item_type, 'value': data},True)
         except Exception as exc:
             self.exception(exc)
 
@@ -146,7 +146,7 @@ class Client:
 
     def dump_cookies_db(self):
         self.info("Dumping cookies to db.")
-        self.dump_to_db ('cookie', self.br.get_cookies())
+        self.dump_to_db ('cookie', pickle.dumps(self.br.get_cookies()))
 
     def dump_screenshot_db(self):
         self.info("Dumping screenshot to db.")
