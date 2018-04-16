@@ -15,7 +15,7 @@ def source():
         image_file = pickle.loads(db.findOne({'type':'screenshot'}))
         send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
-        print(str(e))
+        print(str(exc))
         
     return 'Hello World!'
 
