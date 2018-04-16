@@ -123,7 +123,7 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database()
-            db.replace_one({'type':item_type},{'type': item_type, 'value': pickle.dumps(data)},True)
+            db.update_one({'type':item_type},{'type': item_type, 'value': pickle.dumps(data)},True)
         except Exception as exc:
             self.exception(exc)
 
