@@ -123,7 +123,7 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database()
-            db.insert({type:item_type, value: pickle.dumps(data)})
+            db.replace_one({'type':item_type},{type:item_type, value: pickle.dumps(data)},True)
         except Exception as exc:
             self.exception(exc)
 
@@ -145,7 +145,7 @@ class Client:
             pickle.dump(self.br.get_cookies(), f)
 
     def dump_cookies_db(self):
-        self.dump_to_db ('screenshot', self.br.get_cookies())
+        self.dump_to_db ('cookie', self.br.get_cookies())
 
     def dump_screenshot_db(self):
         self.dump_to_db ('screenshot', self.br.get_screenshot_as_png())
@@ -274,6 +274,7 @@ class Client:
         #pin.submit()
 
         self.br.save_screenshot("state/after_login.png")
+        self.dump_screenshot_db()
         # Click "approve".
         self.info("Sleeping 2 seconds.")
         self.sleep(minsleep=10,maxsleep=15)
