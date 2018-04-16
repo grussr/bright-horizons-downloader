@@ -15,7 +15,7 @@ def source():
         db = client.get_default_database().settings
         screenshot = db.find_one({'type':'screenshot'})
         image_file = BytesIO(screenshot['value'])
-        send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
+        return send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
         print(str(exc))
         
