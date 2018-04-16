@@ -1,5 +1,5 @@
 import os
-import StringIO
+from io import StringIO
 from flask import Flask
 from flask import send_file
 from pymongo import MongoClient

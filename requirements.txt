@@ -7,4 +7,3 @@ Jinja2
 Werkzeug
 gunicorn
 pymongo
-StringIO
