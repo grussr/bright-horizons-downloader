@@ -131,7 +131,7 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database()
-            return pickle.loads(db.findOne('type':item_type))
+            return pickle.loads(db.findOne({'type':item_type}))
         except Exception as exc:
             self.exception(exc)
 
