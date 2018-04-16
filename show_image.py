@@ -13,7 +13,9 @@ def source():
     client = MongoClient(MONGO_URL)
     try:
         db = client.get_default_database().settings
-        image_file = BytesIO(pickle.loads(db.find_one({'type':'screenshot'}).value))
+        screenshot = db.find_one({'type':'screenshot'})
+        print(screenshot)
+        image_file = BytesIO(pickle.loads(screenshot.value))
         send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
         print(str(exc))
