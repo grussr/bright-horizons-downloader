@@ -1,4 +1,5 @@
 import os
+import StringIO
 from flask import Flask
 from flask import send_file
 from pymongo import MongoClient
@@ -12,7 +13,7 @@ def source():
     client = MongoClient(MONGO_URL)
     try:
         db = client.get_default_database().settings
-        image_file = pickle.loads(db.find_one({'type':'screenshot'}))
+        image_file = StringIO(pickle.loads(db.find_one({'type':'screenshot'})))
         send_file(image_file, attachment_filename='logo.png', mimetype='image/png')
     except Exception as exc:
         print(str(exc))
