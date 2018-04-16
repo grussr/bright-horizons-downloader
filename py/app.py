@@ -65,7 +65,7 @@ class DownloadError(Exception):
 
 
 class Client:
-    MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017')
+    MONGO_URL = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/test_db')
     COOKIE_FILE = "state/cookies.pkl"
     TIMESTAMP_FILE = "state/timestamp"
     ROOT_URL = "https://www.tadpoles.com/"

@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def source():
-    MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017')
+    MONGO_URL = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/test_db')
     client = MongoClient(MONGO_URL)
     try:
         db = client.get_default_database()
