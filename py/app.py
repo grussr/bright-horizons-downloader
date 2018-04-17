@@ -330,7 +330,7 @@ class Client:
         
         #Dump to new object and return
         exif_bytes = piexif.dump(exif_dict)
-        output_image = io.StringIO.StringIO()
+        output_image = io.StringIO()
         image.save(output_image, "jpeg", exif=exif_bytes)
         return output_image
         
