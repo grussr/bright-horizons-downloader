@@ -317,27 +317,32 @@ class Client:
 
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
-        image = Image.open(response.raw)
+        try:
+            image = Image.open(response.raw)
         
-        #Load Exif Info & Modify
-        exif_dict = piexif.load(image.info["exif"])
-        exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
+            #Load Exif Info & Modify
+            exif_dict = piexif.load(image.info["exif"])
+            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
+                
+            w, h = image.size
+            exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
+            exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
+            exif_dict["exif"] = exif_ifd
             
-        w, h = image.size
-        exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
-        exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
-        exif_dict["exif"] = exif_ifd
-        
-        #Dump to new object and return
-        exif_bytes = piexif.dump(exif_dict)
-        output_image = io.BytesIO()
-        image.save(output_image, format="JPEG", exif=exif_bytes)
-        return output_image
+            #Dump to new object and return
+            exif_bytes = piexif.dump(exif_dict)
+            output_image = io.BytesIO()
+            image.save(output_image, format="JPEG", exif=exif_bytes)
+            return output_image
+        except:
+            self.debug("Failed to process exif data")
+            return response
         
     def write_s3(self,file, filename):
         client = boto3.client('s3',aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
         client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
-        
+
+
     def save_image_api(self, key, timestamp):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
         month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
@@ -353,17 +358,19 @@ class Client:
         filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
         filename = abspath(join(*filename_parts))
         
-        file = self.write_exif(resp, timestamp)
         # self.write_s3(file, filename)
         # Make sure the parent dir exists.
         dr = dirname(filename)
         if not isdir(dr):
             os.makedirs(dr)
-           
+          
         with open(filename, 'wb') as f:
-            f.write(file.getvalue())
-        #    for chunk in resp.iter_content(1024):
-        #        f.write(chunk)
+            try
+                file = self.write_exif(resp, timestamp)
+                f.write(file.getvalue())
+            except:
+                for chunk in resp.iter_content(1024):
+                    f.write(chunk)
 
     def download_images(self):
         '''Login to tadpoles.com and download all user's images.
