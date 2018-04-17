@@ -357,6 +357,7 @@ class Client:
 
         filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
         filename = abspath(join(*filename_parts))
+        file = self.write_exif(resp, timestamp)
         
         # self.write_s3(file, filename)
         # Make sure the parent dir exists.
@@ -365,8 +366,7 @@ class Client:
             os.makedirs(dr)
           
         with open(filename, 'wb') as f:
-            try
-                file = self.write_exif(resp, timestamp)
+            try:
                 f.write(file.getvalue())
             except:
                 for chunk in resp.iter_content(1024):
@@ -402,4 +402,3 @@ def download_images():
 
 if __name__ == "__main__":
     download_images()
-
