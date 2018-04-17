@@ -146,7 +146,7 @@ class Client:
         self.cookies = self.load_from_db('cookie')
         if self.cookies is None:
             raise FileNotFoundError ("cookie not found in db")
-        self.cookies = pickle.load(self.cookies)
+        self.cookies = pickle.loads(self.cookies)
 
     def dump_cookies(self):
         self.info("Dumping cookies.")
