@@ -137,7 +137,7 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database().settings
-            return db.find_one({'type':item_type})
+            return (db.find_one({'type':item_type}))['value']
         except Exception as exc:
             self.exception(exc)
 
