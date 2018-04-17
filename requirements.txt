@@ -9,4 +9,3 @@ gunicorn
 pymongo
 piexif
 boto3
-pil
