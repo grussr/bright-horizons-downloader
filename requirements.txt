@@ -9,3 +9,4 @@ gunicorn
 pymongo
 piexif
 boto3
+https://files.pythonhosted.org/packages/c6/c1/dfd3b4d0ddd92cf2ef6bb2b0786649b29fb7e1dd560c00f5ac0383aa7023/Pillow-5.1.0-cp34-cp34m-manylinux1_x86_64.whl
