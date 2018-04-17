@@ -260,7 +260,7 @@ class Client:
                 for event in jsonData['events']:
                     if len(event['attachments']) > 0:
                         for attachment in event['new_attachments']:
-                            self.save_image_api(attachment['key'],event['event_time'])
+                            self.save_image_api(attachment['key'],event['event_time'],attachment['mime_type'])
                 
                 if not self.full_sync:
                     break
@@ -343,7 +343,7 @@ class Client:
         client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
 
 
-    def save_image_api(self, key, timestamp):
+    def save_image_api(self, key, timestamp, mime_type):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
         month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
 
@@ -357,18 +357,18 @@ class Client:
 
         filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
         filename = abspath(join(*filename_parts))
-        file = self.write_exif(resp, timestamp)
         
         # self.write_s3(file, filename)
         # Make sure the parent dir exists.
         dr = dirname(filename)
         if not isdir(dr):
             os.makedirs(dr)
-          
+        
         with open(filename, 'wb') as f:
-            try:
+            if mime_type == 'image/jpeg':
+                file = self.write_exif(resp, timestamp)
                 f.write(file.getvalue())
-            except:
+            else:
                 for chunk in resp.iter_content(1024):
                     f.write(chunk)
 
