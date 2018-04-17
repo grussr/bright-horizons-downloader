@@ -320,8 +320,7 @@ class Client:
         
         #Load Exif Info & Modify
         exif_dict = piexif.load(image.info["exif"])
-        exif_ifd = {piexif.ExifIFD.DateTimeOriginal: unicode(datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')),
-            }
+        exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
             
         w, h = image.size
         exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
