@@ -326,7 +326,7 @@ class Client:
         w, h = image.size
         exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
         exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
-        exit_dict["Exif"] = exif_ifd
+        exit_dict["exif"] = exif_ifd
         
         #Dump to new object and return
         exif_bytes = piexif.dump(exif_dict)
