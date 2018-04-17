@@ -22,6 +22,9 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.proxy import *
 from pymongo import MongoClient
+from PIL import Image
+import piexif
+import boto3
 
 
 # -----------------------------------------------------------------------------
@@ -74,6 +77,9 @@ class Client:
     MIN_SLEEP = 1
     MAX_SLEEP = 3
     DAY_RANGE = datetime.timedelta(days=45)
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    BUCKET_NAME = os.getenv("AWS_BUCKET_NAME","tadpoles")
 
     def __init__(self):
         self.init_logging()
@@ -138,6 +144,9 @@ class Client:
     def load_cookies_db(self):
         self.info("Loading cookies from db.")
         self.cookies = self.load_from_db('cookie')
+        if self.cookies is None:
+            raise FileNotFoundError ("cookie not found in db")
+        self.cookies = pickle.load(self.cookies)
 
     def dump_cookies(self):
         self.info("Dumping cookies.")
@@ -181,6 +190,21 @@ class Client:
             
         self.info(current_window)
 
+    def dump_timestamp_db(self, timestamp):
+        self.info("Dumping Timestamp to db.")
+        self.dump_to_db ('timestamp', pickle.dumps(timestamp))
+
+    def load_timestamp_db(self):
+        self.info("Loading Timestamp from db.")
+        self.full_sync = False
+        start_time = self.load_from_db('timestamp')
+        if start_time is None:
+            start_time = datetime.datetime.now()
+            self.full_sync = True
+        else:
+            start_time = pickle.loads(start_time)
+        return start_time
+        
     def dump_timestamp(self, timestamp):
         self.info("Dumping Timestamp.")
         with open(self.TIMESTAMP_FILE,"wb") as f:
@@ -203,8 +227,8 @@ class Client:
 
     def get_api(self):
         end_time = datetime.datetime.now()
-        start_time = self.load_timestamp()
-        self.dump_timestamp(end_time)
+        start_time = self.load_timestamp_db()
+        self.dump_timestamp_db(end_time)
 
         while True:
             if self.full_sync:
@@ -239,7 +263,7 @@ class Client:
                 end_time=start_time
             except Exception as exc:
                self.exception(exc)
-               self.dump_timestamp(start_time)
+               self.dump_timestamp_db(start_time)
                break
                  
 
@@ -287,6 +311,30 @@ class Client:
         self.switch_windows()
         
 
+    def write_exif(self, response, timestamp):
+        response.raw.decode_content = True
+        image = Image.open(response.raw)
+        
+        #Load Exif Info & Modify
+        exif_dict = piexif.load(image.info["Exif"])
+        exif_ifd = {piexif.ExifIFD.DateTimeOriginal: unicode(datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')),
+            }
+            
+        w, h = image.size
+        exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
+        exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
+        exit_dict["Exif"] = exif_ifd
+        
+        #Dump to new object and return
+        exif_bytes = piexif.dump(exif_dict)
+        output_image = cStringIO.StringIO()
+        image.save(output_image, "jpeg", exif=exif_bytes)
+        return output_image
+        
+    def write_s3(self,file, filename):
+        client = boto3.client('s3',aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
+        client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
+        
     def save_image_api(self, key, timestamp):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
         month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
@@ -301,27 +349,29 @@ class Client:
 
         filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
         filename = abspath(join(*filename_parts))
-
+        
+        file = self.write_exif(resp, timestamp)
+        # self.write_s3(file, filename)
         # Make sure the parent dir exists.
         dr = dirname(filename)
         if not isdir(dr):
             os.makedirs(dr)
            
         with open(filename, 'wb') as f:
-            for chunk in resp.iter_content(1024):
-                f.write(chunk)
+            f.write(file)
+        #    for chunk in resp.iter_content(1024):
+        #        f.write(chunk)
 
     def download_images(self):
         '''Login to tadpoles.com and download all user's images.
         '''
-
         try:
-            self.load_cookies()
+            self.load_cookies_db()
         except FileNotFoundError:
             self.navigate_url(self.ROOT_URL)
             self.do_login()
-            self.dump_cookies()
-            self.load_cookies()
+            self.dump_cookies_db()
+            self.load_cookies_db()
 
         # Get the cookies ready for requests lib.
         self.requestify_cookies()

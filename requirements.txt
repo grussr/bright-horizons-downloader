@@ -7,3 +7,6 @@ Jinja2
 Werkzeug
 gunicorn
 pymongo
+piexif
+boto3
+pil
