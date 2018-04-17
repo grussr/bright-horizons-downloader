@@ -361,7 +361,7 @@ class Client:
             os.makedirs(dr)
            
         with open(filename, 'wb') as f:
-            f.write(file)
+            f.write(file.getvalue())
         #    for chunk in resp.iter_content(1024):
         #        f.write(chunk)
 
