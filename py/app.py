@@ -137,9 +137,12 @@ class Client:
         client = MongoClient(self.MONGO_URL)
         try:
             db = client.get_default_database().settings
-            return (db.find_one({'type':item_type}))['value']
+            value = db.find_one({'type':item_type})
+            if value is not None:
+                return (db.find_one({'type':item_type}))['value']
         except Exception as exc:
             self.exception(exc)
+        return None
 
     def load_cookies_db(self):
         self.info("Loading cookies from db.")
