@@ -1,4 +1,5 @@
 import os
+import io
 import re
 import sys
 import pdb
@@ -329,7 +330,7 @@ class Client:
         
         #Dump to new object and return
         exif_bytes = piexif.dump(exif_dict)
-        output_image = cStringIO.StringIO()
+        output_image = io.StringIO.StringIO()
         image.save(output_image, "jpeg", exif=exif_bytes)
         return output_image
         
