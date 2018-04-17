@@ -319,7 +319,7 @@ class Client:
         image = Image.open(response.raw)
         
         #Load Exif Info & Modify
-        exif_dict = piexif.load(image.info["Exif"])
+        exif_dict = piexif.load(image.info["exif"])
         exif_ifd = {piexif.ExifIFD.DateTimeOriginal: unicode(datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')),
             }
             
