@@ -293,8 +293,10 @@ class Client:
             except:
                 self.debug("Failed loading exif data")
                         
+            if image.mode in ('RGBA', 'LA'):
+                image = image.convert("RGB")
+                
             w, h = image.size
-            
             zeroth_ifd = {piexif.ImageIFD.Make: u"Tadpoles",
               piexif.ImageIFD.XResolution: (w, 1),
               piexif.ImageIFD.YResolution: (h, 1),
@@ -309,7 +311,7 @@ class Client:
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
-            image.save(output_image, format="JPEG2000", exif=exif_bytes)
+            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=0, quality=95, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")
