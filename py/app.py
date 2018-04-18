@@ -334,8 +334,9 @@ class Client:
             output_image = io.BytesIO()
             image.save(output_image, format="JPEG", exif=exif_bytes)
             return output_image
-        except:
+        except Exception as exc:
             self.debug("Failed to process exif data")
+            self.exception(exc)
             return response
         
     def write_s3(self,file, filename):
@@ -366,9 +367,11 @@ class Client:
         
         with open(filename, 'wb') as f:
             if mime_type == 'image/jpeg':
+                self.debug("Writing image" + filename)
                 file = self.write_exif(resp, timestamp)
                 f.write(file.getvalue())
             else:
+                self.debug("Writing video" + filename)
                 for chunk in resp.iter_content(1024):
                     f.write(chunk)
 
