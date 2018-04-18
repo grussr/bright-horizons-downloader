@@ -8,5 +8,5 @@ Werkzeug
 gunicorn
 pymongo
 piexif
-boto3
 pillow
+google-cloud-storage

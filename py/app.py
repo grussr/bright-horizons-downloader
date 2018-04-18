@@ -25,8 +25,7 @@ from selenium.webdriver.common.proxy import *
 from pymongo import MongoClient
 from PIL import Image
 import piexif
-import boto3
-
+from google.cloud import storage
 
 # -----------------------------------------------------------------------------
 # Logging stuff
@@ -346,8 +345,9 @@ class Client:
             return response
         
     def write_s3(self,file, filename):
-        client = boto3.client('s3',aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
-        client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
+        client = boto3.client('s3',aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY, endpoint_url='https://storage.googleapis.com')
+        #client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
+        client.put_object(Body=open('/py/app.y', 'rb'),Bucket=tadpoles, Key='testfile.txt')
 
 
     def save_image_api(self, key, timestamp, mime_type):
@@ -385,17 +385,21 @@ class Client:
         '''Login to tadpoles.com and download all user's images.
         '''
         try:
-            self.load_cookies_db()
+    #        self.load_cookies_db()
+             client = storage.client()
+             bucket = client.get_bucket(self.BUCKET_NAME)
+             blob = bucket.blob('/app/app.py')
+             blob.upload_from_filename('py/app.py')
         except FileNotFoundError:
-            self.navigate_url(self.ROOT_URL)
-            self.do_login()
-            self.dump_cookies_db()
-            self.load_cookies_db()
+#           self.navigate_url(self.ROOT_URL)
+#           self.do_login()
+#           self.dump_cookies_db()
+#           self.load_cookies_db()
 
         # Get the cookies ready for requests lib.
-        self.requestify_cookies()
+#       self.requestify_cookies()
 
-        self.get_api()
+#       self.get_api()
     
     def main(self):
         with self as client:
