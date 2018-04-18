@@ -24,7 +24,7 @@ def source():
     return 'Hello World!'
 
 @app.route('/list/', defaults={'req_path': ''})
-@app.route('/list/<path:req_path>')
+@app.route('/<path:req_path>')
 def dir_listing(req_path):
     BASE_DIR = '/app/img'
 
