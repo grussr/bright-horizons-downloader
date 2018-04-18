@@ -346,7 +346,7 @@ class Client:
         except Exception as exc:
             self.debug("Failed to process exif data")
             self.exception(exc)
-            return response
+            return image
         
     def write_s3(self,file, filename, mime_type, rewind=False):
         client = storage.Client()
