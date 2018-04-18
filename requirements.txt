@@ -9,4 +9,5 @@ gunicorn
 pymongo
 piexif
 pillow
+pytz
 google-cloud-storage

@@ -13,6 +13,7 @@ from random import randrange
 from getpass import getpass
 from os.path import abspath, dirname, join, isfile, isdir
 import datetime
+import pytz
 
 import json
 import requests
@@ -330,7 +331,9 @@ class Client:
               piexif.ImageIFD.XResolution: (w, 1),
               piexif.ImageIFD.YResolution: (h, 1),
               }
-            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
+            
+            eastern = timezone('US/Eastern')
+            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.fromtimestamp(timestamp,eastern).strftime('%Y:%m:%d %H:%M:%S')}
 
             exif_dict = {"0th":zeroth_ifd, "Exif":exif_ifd}
             
@@ -344,11 +347,11 @@ class Client:
             self.exception(exc)
             return response
         
-    def write_s3(self,file, filename, mime_type):
+    def write_s3(self,file, filename, mime_type, rewind=False):
         client = storage.Client()
         bucket = client.get_bucket(self.BUCKET_NAME)
         blob = bucket.blob(filename)
-        blob.upload_from_file(file, rewind=True,content_type=mime_type)
+        blob.upload_from_file(file, rewind=rewind,content_type=mime_type)
 
     def save_image_api(self, key, timestamp, mime_type):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
@@ -367,7 +370,7 @@ class Client:
         
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
-            file = self.write_exif(resp, timestamp)
+            file = self.write_exif(resp, timestamp, True)
             self.write_s3(file,filename, mime_type)
         else:
             self.debug("Writing video" + filename)
