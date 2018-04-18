@@ -395,9 +395,9 @@ class Client:
            self.load_cookies_db()
 
         # Get the cookies ready for requests lib.
-       self.requestify_cookies()
+        self.requestify_cookies()
 
-       self.get_api()
+        self.get_api()
     
     def main(self):
         with self as client:
