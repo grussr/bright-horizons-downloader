@@ -362,26 +362,16 @@ class Client:
             msg = 'Error (%r) downloading %r'
             raise DownloadError(msg % (resp.status_code, url))
 
-        filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
-        filename = abspath(join(*filename_parts))
+        filename_parts = ['/',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
+        filename = join(*filename_parts)
         
-        # self.write_s3(file, filename)
-        # Make sure the parent dir exists.
-        dr = dirname(filename)
-        if not isdir(dr):
-            os.makedirs(dr)
-        
-        #with open(filename, 'wb') as f:
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
             file = self.write_exif(resp, timestamp)
             self.write_s3(file,filename, mime_type)
-            #f.write(file.getvalue())
         else:
             self.debug("Writing video" + filename)
             self.write_s3(resp.raw,filename, mime_type)
-            #for chunk in resp.iter_content(1024):
-            #    f.write(chunk)
 
     def download_images(self):
         '''Login to tadpoles.com and download all user's images.
