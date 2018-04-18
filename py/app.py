@@ -333,7 +333,8 @@ class Client:
               }
             
             eastern = timezone('US/Eastern')
-            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.fromtimestamp(timestamp,eastern).strftime('%Y:%m:%d %H:%M:%S')}
+            date_taken = datetime.datetime.fromtimestamp(timestamp,eastern)
+            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: date_taken.strftime('%Y:%m:%d %H:%M:%S')}
 
             exif_dict = {"0th":zeroth_ifd, "Exif":exif_ifd}
             
@@ -370,8 +371,8 @@ class Client:
         
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
-            file = self.write_exif(resp, timestamp, True)
-            self.write_s3(file,filename, mime_type)
+            file = self.write_exif(resp, timestamp)
+            self.write_s3(file,filename, mime_type, True)
         else:
             self.debug("Writing video" + filename)
             self.write_s3(resp.raw,filename, mime_type)
