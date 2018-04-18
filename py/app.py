@@ -375,7 +375,7 @@ class Client:
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
             file = self.write_exif(resp, timestamp)
-            self.write_s3(file.getvalue(),filename, mime_type)
+            self.write_s3(file,filename, mime_type)
             #f.write(file.getvalue())
         else:
             self.debug("Writing video" + filename)
