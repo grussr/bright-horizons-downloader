@@ -80,7 +80,7 @@ class Client:
     DAY_RANGE = datetime.timedelta(days=45)
     BUCKET_NAME = os.getenv("AWS_BUCKET_NAME","tadpoles")
     GS_CLIENT = storage.Client()
-    BUCKET = GS_CLIENT.get_bucket(self.BUCKET_NAME)
+    BUCKET = GS_CLIENT.get_bucket(BUCKET_NAME)
 
     def __init__(self):
         self.init_logging()
