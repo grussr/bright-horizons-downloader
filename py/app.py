@@ -1,4 +1,5 @@
 import os
+import io
 import re
 import sys
 import pdb
@@ -259,7 +260,7 @@ class Client:
                 for event in jsonData['events']:
                     if len(event['attachments']) > 0:
                         for attachment in event['new_attachments']:
-                            self.save_image_api(attachment['key'],event['event_time'])
+                            self.save_image_api(attachment['key'],event['event_time'],attachment['mime_type'])
                 
                 if not self.full_sync:
                     break
@@ -316,29 +317,40 @@ class Client:
 
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
-        image = Image.open(response.raw)
+        try:
+            image = Image.open(response.raw)
         
-        #Load Exif Info & Modify
-        exif_dict = piexif.load(image.info["Exif"])
-        exif_ifd = {piexif.ExifIFD.DateTimeOriginal: unicode(datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')),
-            }
+            #Load Exif Info & Modify
+            try:
+                exif_dict = piexif.load(image.info["exif"])
+            except:
+                self.debug("Failed loading exif data")
+            w, h = image.size
             
-        w, h = image.size
-        exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
-        exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
-        exit_dict["exif"] = exif_ifd
-        
-        #Dump to new object and return
-        exif_bytes = piexif.dump(exif_dict)
-        output_image = cStringIO.StringIO()
-        image.save(output_image, "jpeg", exif=exif_bytes)
-        return output_image
+            zeroth_ifd = {piexif.ImageIFD.Make: u"Tadpoles",
+              piexif.ImageIFD.XResolution: (w, 1),
+              piexif.ImageIFD.YResolution: (h, 1),
+              }
+            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
+
+            exif_dict = {"0th":zeroth_ifd, "Exif":exif_ifd}
+            
+            #Dump to new object and return
+            exif_bytes = piexif.dump(exif_dict)
+            output_image = io.BytesIO()
+            image.save(output_image, format="JPEG", exif=exif_bytes)
+            return output_image
+        except Exception as exc:
+            self.debug("Failed to process exif data")
+            self.exception(exc)
+            return response
         
     def write_s3(self,file, filename):
         client = boto3.client('s3',aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
         client.put_object(Body=file, Bucket=self.BUCKET_NAME, Key=filename)
-        
-    def save_image_api(self, key, timestamp):
+
+
+    def save_image_api(self, key, timestamp, mime_type):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
         month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
 
@@ -353,17 +365,21 @@ class Client:
         filename_parts = ['img',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
         filename = abspath(join(*filename_parts))
         
-        file = self.write_exif(resp, timestamp)
         # self.write_s3(file, filename)
         # Make sure the parent dir exists.
         dr = dirname(filename)
         if not isdir(dr):
             os.makedirs(dr)
-           
+        
         with open(filename, 'wb') as f:
-            f.write(file)
-        #    for chunk in resp.iter_content(1024):
-        #        f.write(chunk)
+            if mime_type == 'image/jpeg':
+                self.debug("Writing image" + filename)
+                file = self.write_exif(resp, timestamp)
+                f.write(file.getvalue())
+            else:
+                self.debug("Writing video" + filename)
+                for chunk in resp.iter_content(1024):
+                    f.write(chunk)
 
     def download_images(self):
         '''Login to tadpoles.com and download all user's images.
@@ -395,4 +411,3 @@ def download_images():
 
 if __name__ == "__main__":
     download_images()
-
