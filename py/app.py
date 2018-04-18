@@ -78,9 +78,9 @@ class Client:
     MIN_SLEEP = 1
     MAX_SLEEP = 3
     DAY_RANGE = datetime.timedelta(days=45)
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     BUCKET_NAME = os.getenv("AWS_BUCKET_NAME","tadpoles")
+    GS_CLIENT = storage.Client()
+    BUCKET = GS_CLIENT.get_bucket(self.BUCKET_NAME)
 
     def __init__(self):
         self.init_logging()
@@ -119,13 +119,6 @@ class Client:
         self.info("Navigating to %r", url)
         self.br.get(url)
 
-    def load_cookies(self):
-        self.info("Loading cookies.")
-        if not isdir('state'):
-            os.mkdir('state')
-        with open(self.COOKIE_FILE, "rb") as f:
-            self.cookies = pickle.load(f)
-
     def dump_to_db(self, item_type, data):
         client = MongoClient(self.MONGO_URL)
         try:
@@ -151,11 +144,6 @@ class Client:
         if self.cookies is None:
             raise FileNotFoundError ("cookie not found in db")
         self.cookies = pickle.loads(self.cookies)
-
-    def dump_cookies(self):
-        self.info("Dumping cookies.")
-        with open(self.COOKIE_FILE,"wb") as f:
-            pickle.dump(self.br.get_cookies(), f)
 
     def dump_cookies_db(self):
         self.info("Dumping cookies to db.")
@@ -200,7 +188,7 @@ class Client:
 
     def load_timestamp_db(self):
         self.info("Loading Timestamp from db.")
-        self.full_sync = False
+        self.full_sync = (self.load_from_db('full_sync') == None || self.load_from_db('full_sync') == 'True')
         start_time = self.load_from_db('timestamp')
         if start_time is None:
             start_time = datetime.datetime.now()
@@ -209,30 +197,9 @@ class Client:
             start_time = pickle.loads(start_time)
         return start_time
         
-    def dump_timestamp(self, timestamp):
-        self.info("Dumping Timestamp.")
-        with open(self.TIMESTAMP_FILE,"wb") as f:
-            pickle.dump(timestamp, f)
-
-    def load_timestamp(self):
-        self.info("Loading Timestamp.")
-        self.full_sync = False
-
-        if not isdir('state'):
-            os.mkdir('state')
-
-        if isfile(self.TIMESTAMP_FILE):
-            with open(self.TIMESTAMP_FILE, "rb") as f:
-                start_time = pickle.load(f)
-        else:
-            start_time = datetime.datetime.now()
-            self.full_sync = True
-        return start_time
-
     def get_api(self):
         end_time = datetime.datetime.now()
         start_time = self.load_timestamp_db()
-        self.dump_timestamp_db(end_time)
 
         while True:
             if self.full_sync:
@@ -268,8 +235,9 @@ class Client:
             except Exception as exc:
                self.exception(exc)
                self.dump_timestamp_db(start_time)
-               break
-                 
+               self.dump_to_db('full_sync','True')
+               return
+        self.dump_timestamp_db(end_time)                 
 
     def do_login(self):
         # Navigate to login page.
@@ -314,7 +282,6 @@ class Client:
         # Switch back to tadpoles.
         self.switch_windows()
         
-
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
         try:
@@ -324,8 +291,11 @@ class Client:
             try:
                 exif_dict = piexif.load(image.info["exif"])
             except:
-                image = image.convert("RGB")
                 self.debug("Failed loading exif data")
+            
+            if image.mode in ('RGBA', 'LA'):
+                image = image.convert("RGB")
+            
             w, h = image.size
             
             zeroth_ifd = {piexif.ImageIFD.Make: u"Tadpoles",
@@ -350,9 +320,7 @@ class Client:
             return image
         
     def write_s3(self,file, filename, mime_type, rewind=False):
-        client = storage.Client()
-        bucket = client.get_bucket(self.BUCKET_NAME)
-        blob = bucket.blob(filename)
+        blob = self.BUCKET.blob(filename)
         blob.upload_from_file(file, rewind=rewind,content_type=mime_type)
 
     def save_image_api(self, key, timestamp, mime_type):
@@ -401,10 +369,8 @@ class Client:
             except Exception as exc:
                 self.exception(exc)
 
-
 def download_images():
     Client().main()
-
 
 if __name__ == "__main__":
     download_images()
