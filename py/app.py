@@ -321,13 +321,19 @@ class Client:
             image = Image.open(response.raw)
         
             #Load Exif Info & Modify
-            exif_dict = piexif.load(image.info["exif"])
-            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
-                
+            try:
+                exif_dict = piexif.load(image.info["exif"])
+            except:
+                self.debug("Failed loading exif data")
             w, h = image.size
-            exif_dict["0th"][piexif.ImageIFD.XResolution] = (w, 1)
-            exif_dict["0th"][piexif.ImageIFD.YResolution] = (h, 1)
-            exif_dict["exif"] = exif_ifd
+            
+            zeroth_ifd = {piexif.ImageIFD.Make: u"Tadpoles",
+              piexif.ImageIFD.XResolution: (w, 1),
+              piexif.ImageIFD.YResolution: (h, 1),
+              }
+            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y:%m:%d %H:%M:%S')}
+
+            exif_dict = {"0th":zeroth_ifd, "Exif":exif_ifd}
             
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
