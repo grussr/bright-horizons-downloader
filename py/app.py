@@ -324,6 +324,7 @@ class Client:
             try:
                 exif_dict = piexif.load(image.info["exif"])
             except:
+                image = image.convert("RGB")
                 self.debug("Failed loading exif data")
             w, h = image.size
             
