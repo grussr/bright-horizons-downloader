@@ -348,7 +348,7 @@ class Client:
         client = storage.Client()
         bucket = client.get_bucket(self.BUCKET_NAME)
         blob = bucket.blob(filename)
-        blob.upload_from_file(file, content_type=mime_type)
+        blob.upload_from_file(file, rewind=True,content_type=mime_type)
 
     def save_image_api(self, key, timestamp, mime_type):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
