@@ -386,7 +386,7 @@ class Client:
         '''
         try:
     #        self.load_cookies_db()
-             client = storage.client()
+             client = storage.Client()
              bucket = client.get_bucket(self.BUCKET_NAME)
              blob = bucket.blob('/app/app.py')
              blob.upload_from_filename('py/app.py')
