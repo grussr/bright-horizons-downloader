@@ -188,7 +188,7 @@ class Client:
 
     def load_timestamp_db(self):
         self.info("Loading Timestamp from db.")
-        self.full_sync = (self.load_from_db('full_sync') == None || self.load_from_db('full_sync') == 'True')
+        self.full_sync = (self.load_from_db('full_sync') == None or self.load_from_db('full_sync') == 'True')
         start_time = self.load_from_db('timestamp')
         if start_time is None:
             start_time = datetime.datetime.now()
