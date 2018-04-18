@@ -311,7 +311,7 @@ class Client:
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
-            image.save(output_image, format="JPEG", exif=exif_bytes)
+            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=0, quality=100, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")

@@ -12,3 +12,5 @@ cat << EOF > /app/key.json
   "client_x509_cert_url": "$gcs_client_x509_cert_url"
 }
 EOF
+
+export GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
