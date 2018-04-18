@@ -13,7 +13,7 @@ from random import randrange
 from getpass import getpass
 from os.path import abspath, dirname, join, isfile, isdir
 import datetime
-import pytz
+from pytz import timezone
 
 import json
 import requests
