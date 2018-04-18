@@ -40,7 +40,7 @@ def dir_listing(req_path):
         return send_file(abs_path)
 
     # Show directory contents
-    files = os.listdir('/app')
+    files = os.listdir(abs_path)
     return render_template('files.html', files=files)
     
 if __name__ == '__main__':
