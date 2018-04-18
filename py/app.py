@@ -391,6 +391,7 @@ class Client:
              blob = bucket.blob('/app/app.py')
              blob.upload_from_filename('py/app.py')
         except FileNotFoundError:
+            self.debug("exception")
 #           self.navigate_url(self.ROOT_URL)
 #           self.do_login()
 #           self.dump_cookies_db()
