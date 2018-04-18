@@ -77,7 +77,8 @@ class Client:
     LIST_BASE_URL = ROOT_URL+"remote/v1/events?direction=range"
     MIN_SLEEP = 1
     MAX_SLEEP = 3
-    DAY_RANGE = datetime.timedelta(days=45)
+    NUM_DAYS = int(os.getenv("NUM_DAYS","45"))
+    DAY_RANGE = datetime.timedelta(days=NUM_DAYS)
     BUCKET_NAME = os.getenv("AWS_BUCKET_NAME","tadpoles")
     GS_CLIENT = storage.Client()
     BUCKET = GS_CLIENT.get_bucket(BUCKET_NAME)
@@ -302,7 +303,7 @@ class Client:
               piexif.ImageIFD.YResolution: (h, 1),
               }
             
-            eastern = timezone('US/Eastern')
+            eastern = timezone('America/New_York')
             date_taken = datetime.datetime.fromtimestamp(timestamp,eastern)
             exif_ifd = {piexif.ExifIFD.DateTimeOriginal: date_taken.strftime('%Y:%m:%d %H:%M:%S')}
 
