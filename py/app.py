@@ -285,12 +285,14 @@ class Client:
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
         exif_dict = {}
+        exif_ifd = {}
         zeroth_ifd = {}
         try:
             image = Image.open(response.raw)
             #Load Exif Info & Modify
             try:
-                exif_dict = piexif.load(image.info)
+                exif_dict = piexif.load(image.info["exif"])
+                exif_ifd = exif_dict["Exif"]
             except:
                 self.debug("Failed loading exif data")
                         
@@ -304,9 +306,10 @@ class Client:
                         
             eastern = timezone('America/New_York')
             date_taken = datetime.datetime.fromtimestamp(timestamp,eastern)
-            exif_dict[piexif.ExifIFD.DateTimeOriginal] = date_taken.strftime('%Y:%m:%d %H:%M:%S%z')
+            exif_data[piexif.ExifIFD.DateTimeOriginal] = date_taken.strftime('%Y:%m:%d %H:%M:%S%z')
 
             exif_dict["0th"] = zeroth_ifd
+            exit_dict["Exif"] = exif_data
             
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
