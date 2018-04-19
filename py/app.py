@@ -313,7 +313,7 @@ class Client:
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
             
-            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=keep, quality=95, progressive=True)
+            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=-1, quality=95, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")
@@ -342,7 +342,7 @@ class Client:
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
             file = self.write_exif(resp, timestamp)
-            self.write_s3(file,filename, mime_type)
+            self.write_s3(file,filename, mime_type, True)
         else:
             self.debug("Writing video" + filename)
             self.write_s3(resp.raw,filename, mime_type)
