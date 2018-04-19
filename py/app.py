@@ -309,7 +309,7 @@ class Client:
             exif_ifd[piexif.ExifIFD.DateTimeOriginal] = date_taken.strftime('%Y:%m:%d %H:%M:%S%z')
 
             exif_dict["0th"] = zeroth_ifd
-            exit_dict["Exif"] = exif_ifd
+            exif_dict["Exif"] = exif_ifd
             
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
