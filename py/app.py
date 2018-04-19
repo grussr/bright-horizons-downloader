@@ -290,12 +290,13 @@ class Client:
             #Load Exif Info & Modify
             try:
                 exif_dict = piexif.load(image.info["exif"])
-				zeroth_ifd = piexif.load(image.info["0th"])
+                zeroth_ifd = piexif.load(image.info["0th"])
+                
             except:
-				if exif_dict = None:
-					exif_dict = {}
-				if zeroth_ifd = None:
-					zeroth_ifd = {}
+                if exif_dict = None:
+                    exif_dict = {}
+                if zeroth_ifd = None:
+                    zeroth_ifd = {}
                 self.debug("Failed loading exif data")
                         
             #if image.mode in ('RGBA', 'LA'):
