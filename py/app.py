@@ -290,8 +290,7 @@ class Client:
             image = Image.open(response.raw)
             #Load Exif Info & Modify
             try:
-                exif_dict = piexif.load(image.info["exif"])
-                zeroth_ifd = piexif.load(image.info["0th"])
+                exif_dict = piexif.load(image.info)
             except:
                 self.debug("Failed loading exif data")
                         
