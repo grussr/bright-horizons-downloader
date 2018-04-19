@@ -293,9 +293,9 @@ class Client:
                 zeroth_ifd = piexif.load(image.info["0th"])
                 
             except:
-                if exif_dict = None:
+                if exif_dict == None:
                     exif_dict = {}
-                if zeroth_ifd = None:
+                if zeroth_ifd == None:
                     zeroth_ifd = {}
                 self.debug("Failed loading exif data")
                         
