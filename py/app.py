@@ -285,33 +285,35 @@ class Client:
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
         try:
-            image = Image.open(response.raw)
-        
+            #image = Image.open(response.raw)
+            image = response.raw
             #Load Exif Info & Modify
             try:
                 exif_dict = piexif.load(image.info["exif"])
             except:
                 self.debug("Failed loading exif data")
                         
-            if image.mode in ('RGBA', 'LA'):
-                image = image.convert("RGB")
+            #if image.mode in ('RGBA', 'LA'):
+            #    image = image.convert("RGB")
                 
-            w, h = image.size
-            zeroth_ifd = {piexif.ImageIFD.Make: u"Tadpoles",
-              piexif.ImageIFD.XResolution: (w, 1),
-              piexif.ImageIFD.YResolution: (h, 1),
-              }
+            #w, h = image.size
+            zeroth_ifd[piexif.ImageIFD.Make] = u"Tadpoles"
+            #,
+            #  piexif.ImageIFD.XResolution: (w, 1),
+            #  piexif.ImageIFD.YResolution: (h, 1),
             
             eastern = timezone('America/New_York')
             date_taken = datetime.datetime.fromtimestamp(timestamp,eastern)
-            exif_ifd = {piexif.ExifIFD.DateTimeOriginal: date_taken.strftime('%Y:%m:%d %H:%M:%S')}
+            exif_ifd[piexif.ExifIFD.DateTimeOriginal] = date_taken.strftime('%Y:%m:%d %H:%M:%S%z')
 
-            exif_dict = {"0th":zeroth_ifd, "Exif":exif_ifd}
+            exif_dict["0th"] = zeroth_ifd
+            exif_dict["Exif"] = exif_ifd
             
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
-            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=0, quality=95, progressive=True)
+            piexif.insert(exif_bytes,image, output_image)
+            #image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=0, quality=95, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")
