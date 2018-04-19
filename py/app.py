@@ -298,12 +298,11 @@ class Client:
             if image.mode in ('RGBA', 'LA'):
                 image = image.convert("RGB")
                 
-            #w, h = image.size
+            w, h = image.size
             zeroth_ifd[piexif.ImageIFD.Make] = u"Tadpoles"
-            #,
-            #  piexif.ImageIFD.XResolution: (w, 1),
-            #  piexif.ImageIFD.YResolution: (h, 1),
-            
+            zeroth_ifd[piexif.ImageIFD.XResolution] = (w, 1)
+            zeroth_ifd[piexif.ImageIFD.YResolution] = (h, 1)
+                        
             eastern = timezone('America/New_York')
             date_taken = datetime.datetime.fromtimestamp(timestamp,eastern)
             exif_dict[piexif.ExifIFD.DateTimeOriginal] = date_taken.strftime('%Y:%m:%d %H:%M:%S%z')
@@ -313,8 +312,8 @@ class Client:
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
-            piexif.insert(exif_bytes,image, output_image)
-            #image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=0, quality=95, progressive=True)
+            
+            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=keep, quality=95, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")
