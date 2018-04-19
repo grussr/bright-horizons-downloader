@@ -293,6 +293,7 @@ class Client:
             try:
                 exif_dict = piexif.load(image.info["exif"])
                 exif_ifd = exif_dict["Exif"]
+                icc_prof = image.info["icc_profile"]
             except:
                 self.debug("Failed loading exif data")
                         
@@ -315,7 +316,7 @@ class Client:
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
             
-            image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=-1, quality=95, progressive=True)
+            image.save(output_image, format="JPEG", exif=exif_bytes, icc_profile=icc_prof, subsampling=-1, quality=95, progressive=True)
             return output_image
         except Exception as exc:
             self.debug("Failed to process exif data")
