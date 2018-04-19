@@ -287,19 +287,16 @@ class Client:
         exif_dict = {}
         zeroth_ifd = {}
         try:
-            #image = Image.open(response.raw)
-            image = response.raw
+            image = Image.open(response.raw)
             #Load Exif Info & Modify
             try:
-                load = Image.open(image)
-                exif_dict = piexif.load(load.info["exif"])
-                zeroth_ifd = piexif.load(load.info["0th"])
-                
+                exif_dict = piexif.load(image.info["exif"])
+                zeroth_ifd = piexif.load(image.info["0th"])
             except:
                 self.debug("Failed loading exif data")
                         
-            #if image.mode in ('RGBA', 'LA'):
-            #    image = image.convert("RGB")
+            if image.mode in ('RGBA', 'LA'):
+                image = image.convert("RGB")
                 
             #w, h = image.size
             zeroth_ifd[piexif.ImageIFD.Make] = u"Tadpoles"
