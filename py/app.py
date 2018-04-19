@@ -202,6 +202,7 @@ class Client:
     def get_api(self):
         end_time = datetime.datetime.now()
         start_time = self.load_timestamp_db()
+        self.dump_timestamp_db(end_time)   
 
         while True:
             if self.full_sync:
@@ -238,7 +239,6 @@ class Client:
                self.exception(exc)
                self.dump_timestamp_db(start_time)
                return
-        self.dump_timestamp_db(end_time)                 
 
     def do_login(self):
         # Navigate to login page.
