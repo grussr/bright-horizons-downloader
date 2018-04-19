@@ -290,7 +290,12 @@ class Client:
             #Load Exif Info & Modify
             try:
                 exif_dict = piexif.load(image.info["exif"])
+				zeroth_ifd = piexif.load(image.info["0th"])
             except:
+				if exif_dict = None:
+					exif_dict = {}
+				if zeroth_ifd = None:
+					zeroth_ifd = {}
                 self.debug("Failed loading exif data")
                         
             #if image.mode in ('RGBA', 'LA'):
@@ -342,7 +347,7 @@ class Client:
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
             file = self.write_exif(resp, timestamp)
-            self.write_s3(file,filename, mime_type, True)
+            self.write_s3(file,filename, mime_type)
         else:
             self.debug("Writing video" + filename)
             self.write_s3(resp.raw,filename, mime_type)
