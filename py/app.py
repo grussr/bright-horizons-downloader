@@ -265,13 +265,13 @@ class Client:
 
         # Enter email.
         email = self.br.find_element_by_id("identifierId")
-        email.send_keys(os.getenv("LOGIN",input("Enter email: ")))
+        email.send_keys(input("Enter email: "))
         self.br.find_element_by_id("identifierNext").click()
         self.sleep()
 
         # Enter password.
         passwd = self.br.find_element_by_css_selector("input[type='password'][name='password']")
-        passwd.send_keys(os.getenv("SECRET",getpass("Enter password:")))
+        passwd.send_keys(getpass("Enter password:"))
         self.br.find_element_by_id("passwordNext").click()
         
         # Enter 2FA pin.
