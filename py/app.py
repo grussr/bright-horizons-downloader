@@ -139,12 +139,25 @@ class Client:
             self.exception(exc)
         return None
 
+    def check_cookie_valid(self):
+        self.requestify_cookies()
+        try:
+            resp = requests.get(self.HOME_URL,cookies=self.req_cookies)
+            if resp.status_code == 200:
+                return true
+        except:
+            msg = 'Error (%r) validating cookie %r'
+            raise DownloadError(msg % (resp.status_code, self.HOME_URL))
+    return false
+    
     def load_cookies_db(self):
         self.info("Loading cookies from db.")
         self.cookies = self.load_from_db('cookie')
         if self.cookies is None:
             raise FileNotFoundError ("cookie not found in db")
         self.cookies = pickle.loads(self.cookies)
+        if not self.check_cookie_valid():
+            raise FileNotFoundError ("cookie was invalid")
 
     def dump_cookies_db(self):
         self.info("Dumping cookies to db.")
@@ -252,19 +265,13 @@ class Client:
 
         # Enter email.
         email = self.br.find_element_by_id("identifierId")
-        #email.click()
-        email.send_keys(input("Enter email: "))
-        #email.submit()
+        email.send_keys(os.getenv("LOGIN",input("Enter email: ")))
         self.br.find_element_by_id("identifierNext").click()
         self.sleep()
 
         # Enter password.
-        #self.info(self.br.current_url)
-        #self.br.find_element_by_css_selector("input[type='password'][name='password']").send_keys(getpass("Enter password:")).submit();
-
         passwd = self.br.find_element_by_css_selector("input[type='password'][name='password']")
-        passwd.send_keys(getpass("Enter password:"))
-        #passwd.submit()
+        passwd.send_keys(os.getenv("SECRET",getpass("Enter password:")))
         self.br.find_element_by_id("passwordNext").click()
         
         # Enter 2FA pin.
