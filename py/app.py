@@ -148,7 +148,7 @@ class Client:
         except:
             msg = 'Error (%r) validating cookie %r'
             raise DownloadError(msg % (resp.status_code, self.HOME_URL))
-    return false
+        return false
     
     def load_cookies_db(self):
         self.info("Loading cookies from db.")
