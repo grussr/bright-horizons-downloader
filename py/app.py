@@ -232,7 +232,6 @@ class Client:
             self.info(url)
             try:
                 resp = requests.get(url,cookies=self.req_cookies)
-                self.req_cookies = resp.cookies
                 if resp.status_code != 200:
                     msg = 'Error (%r) downloading %r'
                     raise DownloadError(msg % (resp.status_code, url))
@@ -253,8 +252,6 @@ class Client:
                self.exception(exc)
                self.dump_timestamp_db(start_time)
                return
-        self.cookies = [{'name':name, 'value':value} for name, value in self.req_cookies.items()]
-        self.dump_cookies_db()
                
     def do_login(self):
         # Navigate to login page.
