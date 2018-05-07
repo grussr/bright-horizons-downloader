@@ -144,11 +144,11 @@ class Client:
         try:
             resp = requests.get(self.HOME_URL,cookies=self.req_cookies)
             if resp.status_code == 200:
-                return true
+                return True
         except:
             msg = 'Error (%r) validating cookie %r'
             raise DownloadError(msg % (resp.status_code, self.HOME_URL))
-        return false
+        return False
     
     def load_cookies_db(self):
         self.info("Loading cookies from db.")
