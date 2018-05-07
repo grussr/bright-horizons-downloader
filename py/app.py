@@ -232,6 +232,7 @@ class Client:
             self.info(url)
             try:
                 resp = requests.get(url,cookies=self.req_cookies)
+                self.debug(resp.cookies)
                 if resp.status_code != 200:
                     msg = 'Error (%r) downloading %r'
                     raise DownloadError(msg % (resp.status_code, url))
