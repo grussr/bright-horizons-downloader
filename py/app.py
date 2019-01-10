@@ -21,7 +21,7 @@ import lxml.html
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options 
 from selenium.webdriver.common.proxy import *
 from pymongo import MongoClient
 from PIL import Image
@@ -97,11 +97,11 @@ class Client:
     def __enter__(self):
         options = Options()
         options.add_argument("--headless")
-
-        fp = webdriver.FirefoxProfile()
+        options.binary_location = os.getenv("GOOGLE_CHROME_SHIM","/app/.apt/usr/bin/google-chrome")
 
         self.info("Starting browser")
-        self.br = self.browser = webdriver.Firefox(firefox_options=options,firefox_profile=fp)
+        self.br = self.browser = 
+        self.br = self.browser = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"), chrome_options=options) 
         self.br.implicitly_wait(10)
         return self
 
