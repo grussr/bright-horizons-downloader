@@ -97,10 +97,10 @@ class Client:
     def __enter__(self):
         options = Options()
         options.add_argument("--headless")
-        options.binary_location = os.getenv("GOOGLE_CHROME_SHIM","/app/.apt/usr/bin/google-chrome")
+        options.binary_location = "/app/.apt/usr/bin/google-chrome"
 
         self.info("Starting browser")
-        self.br = self.browser = webdriver.Chrome(chrome_options=options) 
+        self.br = self.browser = webdriver.Chrome(executable_path="/app/.chromedriver/bin/chromedriver",chrome_options=options) 
         self.br.implicitly_wait(10)
         return self
 
