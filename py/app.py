@@ -278,6 +278,7 @@ class Client:
         #pin.send_keys(getpass("Enter google verification code: "))
         #pin.submit()
 
+        self.sleep()
         self.br.save_screenshot("state/after_login.png")
         self.dump_screenshot_db()
         # Click "approve".
