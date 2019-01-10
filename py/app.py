@@ -100,7 +100,6 @@ class Client:
         options.binary_location = os.getenv("GOOGLE_CHROME_SHIM","/app/.apt/usr/bin/google-chrome")
 
         self.info("Starting browser")
-        self.br = self.browser = 
         self.br = self.browser = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"), chrome_options=options) 
         self.br.implicitly_wait(10)
         return self
