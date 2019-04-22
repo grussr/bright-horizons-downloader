@@ -141,7 +141,7 @@ class Client:
     def check_cookie_valid(self):
         self.requestify_cookies()
         try:
-            cookies = {}
+            cookies={}
             resp = requests.get(self.HOME_URL,cookies=self.req_cookies, allow_redirects=False)
             if resp.status_code == 200:
                 for c in resp.cookies:
