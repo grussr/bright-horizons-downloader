@@ -144,7 +144,7 @@ class Client:
             resp = requests.get(self.HOME_URL,cookies=self.req_cookies, allow_redirects=False)
             if resp.status_code == 200:
                 for c in resp.cookies:
-                    cookie=[]
+                    cookie={}
                     cookie["name"]=c.name
                     cookie["value"]=c.value
                     cookies.append(cookie)
