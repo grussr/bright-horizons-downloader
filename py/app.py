@@ -144,13 +144,6 @@ class Client:
             cookies=[]
             resp = requests.get(self.HOME_URL,cookies=self.req_cookies, allow_redirects=False)
             if resp.status_code == 200:
-                for c in requests.utils.dict_from_cookiejar(resp.cookies):
-                    print(c)
-                    cookie={}
-                    #cookie["name"]=c.name
-                    #cookie["value"]=c.value
-                    #cookies.append(cookie)
-                    #print(c.name, c.value)
                 return True
         except:
             msg = 'Error (%r) validating cookie %r'
