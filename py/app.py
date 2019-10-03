@@ -26,7 +26,7 @@ from selenium.webdriver.common.proxy import *
 from pymongo import MongoClient
 from PIL import Image
 import piexif
-from google.cloud import storage
+#from google.cloud import storage
 
 # -----------------------------------------------------------------------------
 # Logging stuff
@@ -77,11 +77,11 @@ class Client:
     LIST_BASE_URL = ROOT_URL+"remote/v1/events?direction=range"
     MIN_SLEEP = 1
     MAX_SLEEP = 3
-    NUM_DAYS = int(os.getenv("NUM_DAYS","45"))
+    NUM_DAYS = int(os.getenv("NUM_DAYS","1"))
     DAY_RANGE = datetime.timedelta(days=NUM_DAYS)
     BUCKET_NAME = os.getenv("AWS_BUCKET_NAME","tadpoles")
-    GS_CLIENT = storage.Client()
-    BUCKET = GS_CLIENT.get_bucket(BUCKET_NAME)
+    #GS_CLIENT = storage.Client()
+    #BUCKET = GS_CLIENT.get_bucket(BUCKET_NAME)
 
     def __init__(self):
         self.init_logging()
@@ -97,10 +97,10 @@ class Client:
     def __enter__(self):
         options = Options()
         options.add_argument("--headless")
-        options.binary_location = "/app/.apt/usr/bin/google-chrome"
+        #options.binary_location = "/app/.apt/usr/bin/google-chrome"
 
         self.info("Starting browser")
-        self.br = self.browser = webdriver.Chrome(executable_path="/app/.chromedriver/bin/chromedriver",chrome_options=options) 
+        self.br = self.browser = webdriver.Chrome(chrome_options=options) 
         self.br.implicitly_wait(10)
         return self
 
@@ -125,6 +125,7 @@ class Client:
             db = client.get_default_database().settings
             db.replace_one({'type':item_type},{'type': item_type, 'value': data},True)
         except Exception as exc:
+            self.debug('excption in dump')
             self.exception(exc)
 
     def load_from_db(self, item_type):
@@ -135,6 +136,7 @@ class Client:
             if value is not None:
                 return (db.find_one({'type':item_type}))['value']
         except Exception as exc:
+            self.debug('exception in loaddb')
             self.exception(exc)
         return None
 
@@ -203,7 +205,8 @@ class Client:
     def load_timestamp_db(self):
         self.info("Loading Timestamp from db.")
         self.full_sync = False
-        start_time = self.load_from_db('timestamp')
+        start_time = None
+        #start_time = self.load_from_db('timestamp')
         if start_time is None:
             self.debug("Timestamp was empty")
             start_time = datetime.datetime.now()
@@ -213,10 +216,11 @@ class Client:
         return start_time
         
     def get_api(self):
+        self.info("get_api top")
         end_time = datetime.datetime.now()
         start_time = self.load_timestamp_db()
         self.dump_timestamp_db(end_time)   
-
+        blank_days = 0
         while True:
             if self.full_sync:
                 start_time=end_time-self.DAY_RANGE
@@ -239,11 +243,14 @@ class Client:
                 jsonData = json.loads(resp.text)
 
                 if len(jsonData['events']) == 0:
-                    break
+                    blank_days = blank_days + 1
+                    if blank_days > 30:
+                        break
                 for event in jsonData['events']:
                     if len(event['attachments']) > 0:
+                        blank_days = 0
                         for attachment in event['new_attachments']:
-                            self.save_image_api(attachment['key'],event['event_time'],attachment['mime_type'])
+                            self.save_image_api(attachment['key'],event['event_time'],attachment['mime_type'],event['parent_member_display'])
                 
                 if not self.full_sync:
                     break
@@ -254,42 +261,46 @@ class Client:
                return
                
     def do_login(self):
+        #self.navigate('https://familyinfocenter.brighthorizons.com/Account/Login?ReturnUrl=%2fMyBrightDay%2fContents')
         # Navigate to login page.
         self.info("Navigating to login page.")
-        self.br.find_element_by_id("login-button").click()
-        self.br.find_element_by_xpath("//div[@data-bind = 'click: chooseParent']").click()
-        self.br.find_element_by_xpath("//img[@data-bind = 'click:loginGoogle']").click()
+        #self.br.find_element_by_id("login-button").click()
+        #self.br.find_element_by_xpath("//div[@data-bind = 'click: chooseParent']").click()
+        #self.br.find_element_by_xpath("//img[@data-bind = 'click:loginGoogle']").click()
 
         # Focus on the google auth popup.
-        self.switch_windows()
+        #self.switch_windows()
 
         # Enter email.
-        email = self.br.find_element_by_id("identifierId")
+        email = self.br.find_element_by_id("UserName")
         email.send_keys(input("Enter email: "))
-        self.br.find_element_by_id("identifierNext").click()
-        self.sleep()
+        self.br.find_element_by_id("UserName").click()
+#        self.sleep()
 
         # Enter password.
-        passwd = self.br.find_element_by_css_selector("input[type='password'][name='password']")
+        passwd = self.br.find_element_by_css_selector("input[type='password'][name='Password']")
         passwd.send_keys(getpass("Enter password:"))
-        self.br.find_element_by_id("passwordNext").click()
+        #self.br.find_element_by_id("passwordNext").click()
         
         # Enter 2FA pin.
         #Epin = self.br.find_element_by_id("idvPreregisteredPhonePin")
         #pin.send_keys(getpass("Enter google verification code: "))
         #pin.submit()
 
-        self.sleep()
+#        self.sleep()
         self.br.save_screenshot("state/after_login.png")
         self.dump_screenshot_db()
         # Click "approve".
-        self.info("Sleeping 2 seconds.")
-        self.sleep(minsleep=10,maxsleep=15)
+#        self.info("Sleeping 2 seconds.")
+        #self.sleep(minsleep=10,maxsleep=15)
         self.info("Clicking 'approve' button.")
         #self.br.find_element_by_id("submit_approve_access").click()
-        
+        self.br.find_element_by_css_selector("input[name='btnLogin']").click()
+#        self.sleep()
+        self.info("loading homepage?")
+        self.navigate_url(self.HOME_URL)
         # Switch back to tadpoles.
-        self.switch_windows()
+        #self.switch_windows()
         
     def write_exif(self, response, timestamp):
         response.raw.decode_content = True
@@ -303,7 +314,8 @@ class Client:
                 exif_dict = piexif.load(image.info["exif"])
                 exif_ifd = exif_dict["Exif"]
             except:
-                self.debug("Failed loading exif data")
+                a = 1
+                #self.debug("Failed loading exif data")
                         
             if image.mode in ('RGBA', 'LA'):
                 image = image.convert("RGB")
@@ -323,7 +335,7 @@ class Client:
             #Dump to new object and return
             exif_bytes = piexif.dump(exif_dict)
             output_image = io.BytesIO()
-            
+            #self.debug("saving image exif")
             image.save(output_image, format="JPEG", exif=exif_bytes, subsampling=-1, quality=95, progressive=True)
             return output_image
         except Exception as exc:
@@ -332,10 +344,21 @@ class Client:
             return image
         
     def write_s3(self,file, filename, mime_type, rewind=False):
-        blob = self.BUCKET.blob(filename)
-        blob.upload_from_file(file, rewind=rewind,content_type=mime_type)
+        #return True
+        #self.debug("write_s3: saving file as " + filename)
+        if not os.path.exists(os.path.dirname('images' + filename)):
+            try:
+                os.makedirs(os.path.dirname('images' + filename))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        if rewind == True:
+            file.seek(0)
+        open('images' + filename, 'wb').write(file.read())
+        #blob = self.BUCKET.blob(filename)
+        #blob.upload_from_file(file, rewind=rewind,content_type=mime_type)
 
-    def save_image_api(self, key, timestamp, mime_type):
+    def save_image_api(self, key, timestamp, mime_type, child):
         year = datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y')
         month = datetime.datetime.utcfromtimestamp(timestamp).strftime('%b')
 
@@ -348,7 +371,7 @@ class Client:
             raise DownloadError(msg % (resp.status_code, url))
 
         filename_parts = ['/',year, month, resp.headers['Content-Disposition'].split("filename=")[1]]
-        filename = join(*filename_parts)
+        filename = '/' + child + join(*filename_parts)
         
         if mime_type == 'image/jpeg':
             self.debug("Writing image" + filename)
@@ -364,7 +387,7 @@ class Client:
         try:
             self.load_cookies_db()
         except FileNotFoundError:
-           self.navigate_url(self.ROOT_URL)
+           self.navigate_url('https://familyinfocenter.brighthorizons.com/Account/Login?ReturnUrl=%2fMyBrightDay%2fContents')
            self.do_login()
            self.dump_cookies_db()
            self.load_cookies_db()
