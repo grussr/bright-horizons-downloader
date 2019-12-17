@@ -11,6 +11,7 @@ RUN apt-get install -qyy \
     tcl8.6-dev tk8.6-dev python-tk chromium-browser unzip
 
 RUN pip3 install --upgrade selenium pyyaml requests Flask Jinja2 Werkzeug gunicorn pymongo piexif boto3 Pillow
+RUN pip3 install -r requirements.txt
 
 RUN wget https://chromedriver.storage.googleapis.com/79.0.3945.36/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
