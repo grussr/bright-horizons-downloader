@@ -12,7 +12,7 @@ RUN apt-get install -qyy \
 
 RUN pip3 install --upgrade selenium pyyaml requests lxml Flask Jinja2 Werkzeug gunicorn pymongo piexif pillow pytz google-cloud-storage
 
-RUN wget https://chromedriver.storage.googleapis.com/79.0.3945.36/chromedriver_linux64.zip
+RUN wget https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
 RUN chmod +x chromedriver
 RUN cp chromedriver /usr/local/bin/
